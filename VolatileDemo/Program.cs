@@ -12,7 +12,7 @@ namespace VolatileDemo
         /// <summary>
         /// volatile（C# 参考） https://docs.microsoft.com/zh-cn/dotnet/csharp/language-reference/keywords/volatile
         /// volatile 关键字 ：
-        ///         1、读取时，禁止后面的读取操作重新排序。写入时，禁止前面的写入操作重新排序（避免代码重新排序）
+        ///         1、对于标记volatile的成员，读取时，禁止后面的读取操作重新排序，写入时，禁止前面的写入操作重新排序（避免代码重新排序）
         /// 
         ///         2、告诉C#和JIT编译器不将字段缓存到CPU的寄存器中，确保字段的所有读写操作都在RAM中进行（降低了性能，避免了脏读）
         /// </summary>
