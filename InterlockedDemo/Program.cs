@@ -23,11 +23,8 @@ namespace InterlockedDemo
             //SafeRead();
             //--------------------------
 
-            //Increment(); 
-            //--------------------------
+            Increment(); 
 
-            //Example();
-            Example(9);
             Console.ReadKey();
         }
 
@@ -123,77 +120,6 @@ namespace InterlockedDemo
             }
         }
 
-        #endregion
-
-        #region 线程一只能输出1，线程二只能输出2，线程三只能输出3，在控制台中输出顺序为 1 2 3 1 2 3
-
-        static void Example()
-        {
-            int currentValue = 1;
-            Task.Factory.StartNew(() =>
-            {
-                while (true)
-                {
-                    Thread.Sleep(r.Next(500, 1001));
-                    if (Interlocked.CompareExchange(ref currentValue, 2, 1) == 1)
-                    {
-                        Console.WriteLine($"线程 {Thread.CurrentThread.ManagedThreadId} : " +1);
-                    }
-                }
-            }, TaskCreationOptions.LongRunning);
-            Task.Factory.StartNew(() =>
-            {
-                while (true)
-                {
-                    Thread.Sleep(r.Next(500, 1001));
-                    if (Interlocked.CompareExchange(ref currentValue, 3, 2) == 2)
-                    {
-                        Console.WriteLine($"线程 {Thread.CurrentThread.ManagedThreadId} : " + 2);
-                    }
-                }
-            }, TaskCreationOptions.LongRunning);
-            Task.Factory.StartNew(() =>
-            {
-                while (true)
-                {
-                    Thread.Sleep(r.Next(500, 1001));
-                    if (Interlocked.CompareExchange(ref currentValue, 1, 3) == 3)
-                    {
-                        Console.WriteLine($"线程 {Thread.CurrentThread.ManagedThreadId} : " + 3);
-                    }
-                }
-            }, TaskCreationOptions.LongRunning);
-        }
-        static void Example(int num)
-        {
-            if (num < 1)
-            {
-                return;
-            }
-            int currentValue = 1;
-
-            Enumerable.Range(1, num).AsParallel().ForAll(i =>
-            {
-                Thread thread = new Thread(() =>
-                                  {
-                                      while (true)
-                                      {
-                                          Thread.Sleep(r.Next(100, 501));
-                                          int tempNum = i + 1 > num ? 1 : i + 1;
-                                          if (Interlocked.CompareExchange(ref currentValue, tempNum, i) == i)
-                                          {
-                                              Console.WriteLine($"{Thread.CurrentThread.Name} : {i}");
-                                          }
-                                      }
-                                  });
-                thread.IsBackground = true;
-                thread.Name = "线程 " + i;
-                int sleep = 100 * (num - i + 1);
-                Thread.Sleep(r.Next(sleep, sleep));
-                thread.Start();
-                Console.WriteLine(thread.Name + " 已启动！");
-            });
-        }
         #endregion
 
     }
