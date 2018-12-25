@@ -23,8 +23,12 @@ namespace InterlockedDemo
             //SafeRead();
             //--------------------------
 
-            Increment(); 
+            //Increment(); 
 
+            //SpinLockDemo();
+
+            //GetMaximum();
+            GetMaximum2();
             Console.ReadKey();
         }
 
@@ -122,5 +126,134 @@ namespace InterlockedDemo
 
         #endregion
 
+        #region SimpleSpinLock Demo
+
+        /// <summary>
+        /// Console输出顺序不一定是执行顺序，注意观察输出时间！
+        /// </summary>
+        static void SpinLockDemo()
+        {
+            SimpleSpinLock ssl = new SimpleSpinLock();
+            for (int i = 0; i < 5; i++)
+            {
+                Task.Run(() =>
+                {
+                    Console.WriteLine($"Task{Task.CurrentId}：try enter lock. {DateTime.Now.ToString("HH:mm:ss.ffffff")}");
+                    ssl.Enter();
+                    Console.WriteLine($"{"".PadLeft(10, '-')}Task{Task.CurrentId}：get lock with do work. {DateTime.Now.ToString("HH:mm:ss.ffffff")}");
+                    Thread.Sleep(2000);
+                    Console.WriteLine($"{"".PadLeft(20, '-')}Task{Task.CurrentId}：leave lock. {DateTime.Now.ToString("HH:mm:ss.ffffff")}");
+                    ssl.Leave();
+                });
+            }
+        }
+
+        #endregion
+
+        static void GetMaximum()
+        {
+            int num = 1;
+
+            Parallel.For(0, 10, (i) =>
+            {
+                Task.Run(() =>
+                {
+                    var max = Maxinum(ref num, i);
+                    Thread.Sleep(10);
+                    Console.WriteLine($"i = {i} ，num = {num} ，max = {max}");
+                });
+            });
+
+            int Maxinum(ref int target, int value)
+            {
+                int currentVal = target, startVal, desiredVal;
+
+                do
+                {
+                    startVal = currentVal;
+
+                    desiredVal = Math.Max(startVal, value);
+
+                    currentVal = Interlocked.CompareExchange(ref target, desiredVal, startVal);
+                    /*
+                     * Interlocked.CompareExchange 逻辑相当于如下代码：
+                     *     int tempVal = target;
+                     *     if (target == startVal)
+                     *     {
+                     *         target = desiredVal;
+                     *     }
+                     *     return tempVal;
+                     */
+
+
+                } while (startVal != currentVal);//startVal != currentVal时，说明target值被另一个线程（其中target 比 value 小）改了！
+                return desiredVal;
+            }
+        }
+
+        #region 通用 GetMaximun
+        static void GetMaximum2()
+        {
+            int num = 1;
+
+            Parallel.For(0, 10, (i) =>
+            {
+                Task.Run(() =>
+                {
+                    string str = "".PadLeft(i, '-');
+                    var max = Morph(ref num, str, delegate (int a, string r, out string o)
+                    {
+                        int temp = Math.Max(r.Length, a);
+                        o = "".PadLeft(temp, '-');
+                        return temp;
+                    });
+                    Thread.Sleep(10);
+                    Console.WriteLine($"i = {i} ，num = {num} ，max = {max}");
+                });
+            });
+        }
+
+        delegate int Morpher<TResult, TArgument>(int startValue, TArgument argument, out TResult morphResult);
+        static TResult Morph<TResult, TArgument>(ref int target, TArgument argument, Morpher<TResult, TArgument> morpher)
+        {
+            TResult morphResult;
+            int currentVaul = target, startVal, desiredVal;
+
+            do
+            {
+                startVal = currentVaul;
+                desiredVal = morpher(startVal, argument, out morphResult);
+                currentVaul = Interlocked.CompareExchange(ref target, desiredVal, startVal);
+            } while (startVal != currentVaul);
+            return morphResult;
+        } 
+        #endregion
+
+    }
+    /// <summary>
+    /// 实现简单的自旋锁（自旋，即原地打转，循环轮询是否可以得到锁）
+    /// </summary>
+    struct SimpleSpinLock
+    {
+        private int resourceInUse;
+
+        public void Enter()
+        {
+            //第二个线程没有获得锁时，会不停地调用Exchange进行“自旋”，直到第一个线程调用Leave。
+            while (true)
+            {
+                if (Interlocked.Exchange(ref resourceInUse, 1) == 0)
+                {
+                    Console.WriteLine($"Task{Task.CurrentId}：enter lock. {DateTime.Now.ToString("HH:mm:ss.ffffff")}");
+                    return;
+                }
+            }
+        }
+
+        public void Leave()
+        {
+            //this.resourceInUse = 0;
+            Thread.VolatileWrite(ref this.resourceInUse, 0);
+        }
     }
 }
