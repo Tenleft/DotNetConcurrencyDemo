@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -56,7 +58,10 @@ namespace EventDemo
             //AutoResetEventDemo();
 
             //RecursiveLockDemo();
-            ManualResetEventDemo();
+
+            //ManualResetEventDemo();
+
+            PerformanceTest();
         }
 
         static string Now()
@@ -152,5 +157,135 @@ namespace EventDemo
             Console.Read();
         }
 
+        #region 比较性能
+
+        /// <summary>
+        /// 空方法
+        /// </summary>
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        static void None() { }
+
+        static void PerformanceTest()
+        {
+            int complareCount = 10_000_000;
+            int num = 0;//递增数值
+            long firstMillisecond = 0;//无锁调用耗时
+            Console.WriteLine($"{"-".PadLeft(8,'-')}{complareCount.ToString("N0")}次调用测试{"-".PadLeft(8, '-')}");
+            Stopwatch watch = Stopwatch.StartNew();
+            for (int i = 0; i < complareCount; i++)
+            {
+                num++;
+            }
+            watch.Stop();
+            firstMillisecond = watch.ElapsedMilliseconds;
+            Console.WriteLine($"无锁 调用耗时：{watch.ElapsedMilliseconds} 毫秒 {(num == complareCount ? "" : "Error")}");
+
+            num = 0;
+            watch.Restart();
+            for (int i = 0; i < complareCount; i++)
+            {
+                None();
+                num++;
+                None();
+            }
+            watch.Stop();
+            Console.WriteLine($"无锁+空方法 调用耗时：{watch.ElapsedMilliseconds} 毫秒 {"".PadLeft(10)} 约慢{Math.Ceiling((decimal)watch.ElapsedMilliseconds/ firstMillisecond)}倍  {(num == complareCount ? "" : "Error")}");
+            
+            num = 0;
+            watch.Restart();
+            for (int i = 0; i < complareCount; i++)
+            {
+                lock (watch)
+                {
+                    num++;
+                }
+            }
+            watch.Stop();
+
+            Console.WriteLine($"无锁+混合构造模式锁Lock 调用耗时：{watch.ElapsedMilliseconds} 毫秒 {"".PadLeft(10)} 约慢{Math.Ceiling((decimal)watch.ElapsedMilliseconds / firstMillisecond)}倍  {(num == complareCount ? "" : "Error")}");
+
+            InterlockedSpinLock interlockedLock = new InterlockedSpinLock();
+            num = 0;
+            watch.Restart();
+            for (int i = 0; i < complareCount; i++)
+            {
+                interlockedLock.Enter();
+                num++;
+                interlockedLock.Leave();
+            }
+            watch.Stop();
+
+            Console.WriteLine($"无锁+用户模式锁Interlocked 调用耗时：{watch.ElapsedMilliseconds} 毫秒 {"".PadLeft(10)} 约慢{Math.Ceiling((decimal)watch.ElapsedMilliseconds / firstMillisecond)}倍  {(num == complareCount ? "" : "Error")}");
+
+            using (AutoResetEventLock autoEventLock = new AutoResetEventLock())
+            {
+                num = 0;
+                watch.Restart();
+                for (int i = 0; i < complareCount; i++)
+                {
+                    autoEventLock.Enter();
+                    num++;
+                    autoEventLock.Leave();
+                }
+                watch.Stop();
+            }
+
+            Console.WriteLine($"无锁+内核模式锁AutoResetEvent 调用耗时：{watch.ElapsedMilliseconds} 毫秒 {"".PadLeft(10)} 约慢{Math.Ceiling((decimal)watch.ElapsedMilliseconds / firstMillisecond)}倍  {(num == complareCount ? "" : "Error")}");
+
+
+            Console.ReadKey();
+        }
+
+
+        #endregion
+
+    }
+
+    /// <summary>
+    /// Interlocked 自旋锁
+    /// </summary>
+    class InterlockedSpinLock
+    {
+        private int resourceInUse;
+
+        public void Enter()
+        {
+            //第二个线程没有获得锁时，会不停地调用Exchange进行“自旋”，直到第一个线程调用Leave。
+            while (true)
+            {
+                if (Interlocked.Exchange(ref resourceInUse, 1) == 0)
+                {
+                    return;
+                }
+            }
+        }
+        public void Leave()
+        {
+            Thread.VolatileWrite(ref this.resourceInUse, 0);
+        }
+    }
+    /// <summary>
+    /// AutoResetEvent Lock
+    /// </summary>
+    class AutoResetEventLock : IDisposable
+    {
+        /// <summary>
+        /// 初始为终止状态（不会阻塞线程）
+        /// </summary>
+        private AutoResetEvent resetEvent = new AutoResetEvent(true);
+        public void Enter()
+        {
+            resetEvent.WaitOne();
+        }
+
+        public void Leave()
+        {
+            resetEvent.Set();
+        }
+
+        public void Dispose()
+        {
+            resetEvent.Dispose();
+        }
     }
 }
