@@ -106,7 +106,7 @@ namespace MutexDemo
             });
             Console.ReadKey();
 
-            //Mutex对象维护着一个递归计数（recursion count），指出拥有该Mutex的线程调用了多次！
+            //Mutex对象维护着一个递归计数（recursion count），指出拥有该Mutex的线程调用了多少次！
             int Fib(int num)
             {
                 try
