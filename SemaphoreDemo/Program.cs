@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -18,7 +19,8 @@ namespace SemaphoreDemo
             //SingleProcess();
             //MultipleProcessSync();
 
-            MultipleThreadSync();
+            //MultipleThreadSync();
+            SemaphoreSlimTest();
         }
 
         /// <summary>
@@ -90,7 +92,7 @@ namespace SemaphoreDemo
                     {
                         Console.WriteLine(ex);
                     }
-                  
+
                 }
             }
         }
@@ -105,7 +107,8 @@ namespace SemaphoreDemo
             var total = 5;
             for (int i = 1; i <= total; i++)
             {
-                Task.Factory.StartNew(o => {
+                Task.Factory.StartNew(o =>
+                {
                     Console.WriteLine($"线程 {o} 等待中. for wc");
                     samephore.WaitOne();
                     Console.WriteLine($"{string.Empty.PadLeft(5)}线程 {o} ：终于有坑了！开始 嘘嘘~");
@@ -115,6 +118,47 @@ namespace SemaphoreDemo
                 }, i, TaskCreationOptions.LongRunning);
             }
             Console.ReadKey();
+        }
+
+        static void SemaphoreSlimTest()
+        {
+            using (SemaphoreSlim slim = new SemaphoreSlim(2))
+            using (HttpClient client = new HttpClient())
+            {
+                string[] urls = { "https://docs.microsoft.com", "https://www.cnblogs.com", "https://github.com" };
+
+                for (int j = 0; j < 3; j++)
+                {
+                    for (int i = 0; i < urls.Length; i++)
+                    {
+                        GetHttp(client, urls[i], slim).ContinueWith((t, o) =>
+                        {
+                            Console.WriteLine($"{ThreadId()}{o} - Result.Length = {t.Result.Length}");
+                        }, $"{j} - {urls[i]}");
+                    }
+                }
+                Console.ReadKey();
+            }
+        }
+
+        static async Task<string> GetHttp(HttpClient client, string url, SemaphoreSlim slim)
+        {
+            await slim.WaitAsync();
+            string str = string.Empty;
+            try
+            {
+                str = await client.GetStringAsync(url);
+                await Task.Delay(1000);
+            }
+            finally
+            {
+                slim.Release();
+            }
+            return str;
+        }
+        static string ThreadId()
+        {
+            return $"{DateTime.Now.ToString("HH:mm:ss.ffff")}{"".PadLeft(4)}ThreadId = {Thread.CurrentThread.ManagedThreadId}{"".PadLeft(4)}";
         }
     }
 }
