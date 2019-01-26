@@ -53,6 +53,33 @@ namespace EventDemo
 
     class Program
     {
+        static string ThreadId()
+        {
+            return $"{DateTime.Now.ToString("HH:mm:ss.ffff")}{"".PadLeft(4)}ThreadId = {Thread.CurrentThread.ManagedThreadId}{"".PadLeft(4)}";
+        }
+        static void ManualResetEventSlimTest()
+        {
+            //用法同ManualResetEvent
+            ManualResetEventSlim[] slims = { new ManualResetEventSlim(false, 100), new ManualResetEventSlim(false, 800) };
+
+            for (int i = 0; i < slims.Length; i++)
+            {
+                Task.Factory.StartNew(o =>
+                {
+                    int index = (int)o;
+                    Console.WriteLine($"{ThreadId()}doing...");
+                    Thread.Sleep((index + 1) * 1000);//处理耗时任务
+                    slims[index].Set();
+                }, i);
+            }
+
+            WaitHandle.WaitAll(slims.Select(s => s.WaitHandle).ToArray());
+            Console.WriteLine($"{ThreadId()}WaitHandle.WaitAll(slims WaitHandle) completed.");
+
+            slims.Select(s => { s.Dispose(); return 1; }).ToArray();
+            Console.ReadKey();
+        }
+
         static void Main(string[] args)
         {
             //AutoResetEventDemo();
@@ -61,7 +88,9 @@ namespace EventDemo
 
             //ManualResetEventDemo();
 
-            PerformanceTest();
+            //PerformanceTest();
+            ManualResetEventSlimTest();
+
         }
 
         static string Now()
@@ -170,7 +199,7 @@ namespace EventDemo
             int complareCount = 10_000_000;
             int num = 0;//递增数值
             long firstMillisecond = 0;//无锁调用耗时
-            Console.WriteLine($"{"-".PadLeft(8,'-')}{complareCount.ToString("N0")}次调用测试{"-".PadLeft(8, '-')}");
+            Console.WriteLine($"{"-".PadLeft(8, '-')}{complareCount.ToString("N0")}次调用测试{"-".PadLeft(8, '-')}");
             Stopwatch watch = Stopwatch.StartNew();
             for (int i = 0; i < complareCount; i++)
             {
@@ -189,8 +218,8 @@ namespace EventDemo
                 None();
             }
             watch.Stop();
-            Console.WriteLine($"无锁+空方法 调用耗时：{watch.ElapsedMilliseconds} 毫秒 {"".PadLeft(10)} 约慢{Math.Ceiling((decimal)watch.ElapsedMilliseconds/ firstMillisecond)}倍  {(num == complareCount ? "" : "Error")}");
-            
+            Console.WriteLine($"无锁+空方法 调用耗时：{watch.ElapsedMilliseconds} 毫秒 {"".PadLeft(10)} 约慢{Math.Ceiling((decimal)watch.ElapsedMilliseconds / firstMillisecond)}倍  {(num == complareCount ? "" : "Error")}");
+
             num = 0;
             watch.Restart();
             for (int i = 0; i < complareCount; i++)
