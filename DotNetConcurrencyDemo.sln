@@ -19,6 +19,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReaderWriterLockSlimDemo", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CountdownEventDemo", "CountdownEventDemo\CountdownEventDemo.csproj", "{4B285465-7148-443F-8C31-2944C7A45A16}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BarrierDemo", "BarrierDemo\BarrierDemo.csproj", "{471DA4E1-206D-4F98-8A7B-1F269F75CB31}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -125,6 +127,18 @@ Global
 		{4B285465-7148-443F-8C31-2944C7A45A16}.Release|x64.Build.0 = Release|Any CPU
 		{4B285465-7148-443F-8C31-2944C7A45A16}.Release|x86.ActiveCfg = Release|Any CPU
 		{4B285465-7148-443F-8C31-2944C7A45A16}.Release|x86.Build.0 = Release|Any CPU
+		{471DA4E1-206D-4F98-8A7B-1F269F75CB31}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{471DA4E1-206D-4F98-8A7B-1F269F75CB31}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{471DA4E1-206D-4F98-8A7B-1F269F75CB31}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{471DA4E1-206D-4F98-8A7B-1F269F75CB31}.Debug|x64.Build.0 = Debug|Any CPU
+		{471DA4E1-206D-4F98-8A7B-1F269F75CB31}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{471DA4E1-206D-4F98-8A7B-1F269F75CB31}.Debug|x86.Build.0 = Debug|Any CPU
+		{471DA4E1-206D-4F98-8A7B-1F269F75CB31}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{471DA4E1-206D-4F98-8A7B-1F269F75CB31}.Release|Any CPU.Build.0 = Release|Any CPU
+		{471DA4E1-206D-4F98-8A7B-1F269F75CB31}.Release|x64.ActiveCfg = Release|Any CPU
+		{471DA4E1-206D-4F98-8A7B-1F269F75CB31}.Release|x64.Build.0 = Release|Any CPU
+		{471DA4E1-206D-4F98-8A7B-1F269F75CB31}.Release|x86.ActiveCfg = Release|Any CPU
+		{471DA4E1-206D-4F98-8A7B-1F269F75CB31}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
